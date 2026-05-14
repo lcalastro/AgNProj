@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Redefinir senha</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body style="font-family: Arial; max-width:400px; margin:60px auto;">
+  <h2>Redefinir senha</h2>
+
+  <form id="formReset">
+    <input type="password" id="senha" placeholder="Nova senha" required style="width:100%; padding:8px;">
+    <br><br>
+    <button type="submit">Salvar nova senha</button>
+  </form>
+
+  <p id="msg"></p>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+
+    document.getElementById('formReset').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const senha = document.getElementById('senha').value;
+
+      const resp = await fetch('/api/resetar-senha', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, novaSenha: senha })
+      });
+
+      const data = await resp.json();
+      document.getElementById('msg').innerText =
+        resp.ok ? 'Senha redefinida com sucesso.' : (data.erro || 'Erro');
+    });
+  </script>
+</body>
+</html>
