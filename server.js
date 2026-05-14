@@ -5,6 +5,7 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const multer = require('multer');
+const path = require('path');
 const { createClient } = require('@libsql/client');
 
 const upload = multer({ dest: 'uploads/' });
@@ -17,53 +18,28 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.static('public'));
 
 // ==========================================================================
-// 1. CONEXÃO COM TURSO via HTTP (Solução 1)
+// 1. CONEXÃO COM SQLITE EM ARQUIVO FÍSICO
 // ==========================================================================
 
-const url = process.env.TURSO_DATABASE_URL;
-const authToken = process.env.TURSO_AUTH_TOKEN;
+const dbFile = process.env.SQLITE_DB_FILE || path.join(__dirname, 'data', 'agn.sqlite');
+const dbDir = path.dirname(dbFile);
 
-if (!url) {
-  console.error("ERRO FATAL: Variável TURSO_DATABASE_URL não encontrada!");
-  process.exit(1);
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
 }
 
-console.log(`>>> Conectando ao Turso via HTTP: ${url}`);
+console.log(`>>> Usando banco SQLite local: ${dbFile}`);
 
 const db = createClient({
-  url,
-  authToken
+  url: `file:${dbFile}`
 });
 
 // ==========================================================================
-// 2. FUNÇÃO DE EXECUÇÃO COM RETRY AUTOMÁTICO
+// 2. FUNÇÃO DE EXECUÇÃO
 // ==========================================================================
 
-function isRetryableError(err) {
-  const msg = String(err?.message || err || '');
-  return (
-    msg.includes('stream not found') ||
-    msg.includes('ECONNRESET') ||
-    msg.includes('ETIMEDOUT') ||
-    msg.includes('fetch failed') ||
-    msg.includes('socket hang up') ||
-    msg.includes('connection') ||
-    msg.includes('network')
-  );
-}
-
-// executa uma query com até 3 tentativas
-async function exec(sql, args = [], attempt = 1) {
-  try {
-    return await db.execute({ sql, args });
-  } catch (err) {
-    if (attempt < 3 && isRetryableError(err)) {
-      console.warn(`⚠️ Query falhou (tentativa ${attempt}). Retentando...`, err.message);
-      await new Promise(r => setTimeout(r, 200 * attempt));
-      return exec(sql, args, attempt + 1);
-    }
-    throw err;
-  }
+async function exec(sql, args = []) {
+  return db.execute({ sql, args });
 }
 
 // ==========================================================================
