@@ -11,7 +11,7 @@ const { createClient } = require('@libsql/client');
 const upload = multer({ dest: 'uploads/' });
 const app = express();
 
-const SECRET = 'agsus-secret-2026';
+const SECRET = '123456';
 
 // Aumenta limite do body para JSON/Dados grandes
 app.use(express.json({ limit: '50mb' }));
@@ -150,7 +150,7 @@ async function initDB() {
 // ==========================================================================
 
 async function seedAdmin() {
-  const emailAdmin = 'luis.calastro@agenciasus.org.br';
+  const emailAdmin = 'aluno@teste.com.br';
 
   const r = await exec('SELECT id FROM usuarios WHERE email = ?', [emailAdmin]);
   if (r.rows.length === 0) {
