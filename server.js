@@ -154,7 +154,7 @@ async function seedAdmin() {
 
   const r = await exec('SELECT id FROM usuarios WHERE email = ?', [emailAdmin]);
   if (r.rows.length === 0) {
-    const hash = bcrypt.hashSync('123456', 10);
+    const hash = bcrypt.hashSync(SECRET, 10);
     await exec(`
       INSERT INTO usuarios (nome, email, senha, coordenacao, role)
       VALUES (?, ?, ?, ?, ?)
