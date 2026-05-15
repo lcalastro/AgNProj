@@ -1,4 +1,6 @@
 import { apiGet } from './utils.js';
+let currentPage = 1;
+const pageSize = 10;
 
 /* =========================================================
    Helpers
@@ -59,6 +61,7 @@ export async function initFornecedorConsulta() {
       </form>
 
      <div id="infoPreview" class="alert alert-info py-2 small" style="display:none"></div>
+     <div id="paginacaoInfo" class="small text-muted mb-2"></div>
 
      <!-- TABELA -->
      <div class="table-responsive">
@@ -80,13 +83,20 @@ export async function initFornecedorConsulta() {
          </tbody>
        </table>
      </div>
+     <div class="d-flex justify-content-between align-items-center mt-2">
+       <button id="btnPrev" class="btn btn-outline-secondary btn-sm" disabled>Anterior</button>
+       <span id="pageLabel" class="small text-muted">Página 1</span>
+       <button id="btnNext" class="btn btn-outline-secondary btn-sm" disabled>Próxima</button>
+     </div>
 
    </div>
  </div>
 `;
 
   document.getElementById('formBusca')
-    .addEventListener('submit', buscarFornecedores);
+    .addEventListener('submit', (e) => buscarFornecedores(e, 1));
+  document.getElementById('btnPrev').addEventListener('click', () => buscarFornecedores(null, currentPage - 1));
+  document.getElementById('btnNext').addEventListener('click', () => buscarFornecedores(null, currentPage + 1));
 
   buscarFornecedores();
 }
@@ -95,8 +105,9 @@ export async function initFornecedorConsulta() {
    BUSCA
    ========================================================= */
 
-async function buscarFornecedores(e) {
+async function buscarFornecedores(e, page = currentPage) {
   if (e) e.preventDefault();
+  currentPage = Math.max(page, 1);
 
   const tbody = document.getElementById('tbody');
   tbody.innerHTML = `
@@ -112,9 +123,13 @@ async function buscarFornecedores(e) {
       new FormData(document.getElementById('formBusca'))
     );
 
+   params.set('page', String(currentPage));
+   params.set('pageSize', String(pageSize));
    const resp = await apiGet(`/api/fornecedores?${params}`);
    const lista = resp.dados;
    const total = resp.total;
+   const totalPages = resp.totalPages || 1;
+   currentPage = resp.page || currentPage;
 
    const info = document.getElementById('infoPreview');
    
@@ -124,18 +139,11 @@ async function buscarFornecedores(e) {
      (params.get('uf') || '').trim() ||
      (params.get('segmento') || '').trim();
 
-   if (!temFiltro) {
-     info.innerHTML = `
-       Exibindo uma pré-visualização de até
-       <strong>15 fornecedores</strong>
-       de um total de
-       <strong>${total}</strong> cadastrados.
-       Utilize os filtros para ver todos os resultados.
-     `;
-     info.style.display = 'block';
-   } else {
-     info.style.display = 'none';
-   }
+   info.style.display = 'none';
+   document.getElementById('paginacaoInfo').innerHTML = `Total de fornecedores encontrados: <strong>${total}</strong>`;
+   document.getElementById('pageLabel').textContent = `Página ${currentPage} de ${totalPages}`;
+   document.getElementById('btnPrev').disabled = currentPage <= 1;
+   document.getElementById('btnNext').disabled = currentPage >= totalPages;
    
     if (!lista.length) {
       tbody.innerHTML = `
