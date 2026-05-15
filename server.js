@@ -197,6 +197,67 @@ async function seedSequencias2026() {
   }
 }
 
+async function seedFornecedoresBase() {
+  const segmentosBase = [
+    'Alimentação',
+    'Tecnologia da Informação',
+    'Materiais de Escritório',
+    'Serviços Gráficos',
+    'Construção Civil',
+    'Limpeza e Higienização',
+    'Logística e Transporte'
+  ];
+
+  for (const nome of segmentosBase) {
+    await exec('INSERT OR IGNORE INTO segmentos (nome) VALUES (?)', [nome]);
+  }
+
+  const segRows = await exec('SELECT id, nome FROM segmentos', []);
+  const segMap = new Map(segRows.rows.map(s => [s.nome, s.id]));
+
+  const fornecedoresBase = [
+    { cnpj: '11222333000101', razao_social: 'Alfa Distribuidora Ltda', contato: 'Carla Mendes', cidade: 'Brasília', uf: 'DF', endereco: 'SIA Trecho 3 Lote 90', email: 'contato@alfadistribuidora.com.br', atividades: 'Distribuição de alimentos e descartáveis', segmentos: ['Alimentação', 'Limpeza e Higienização'], telefones: [{ numero: '61991112233', whatsapp: 1 }, { numero: '6133322200', whatsapp: 0 }] },
+    { cnpj: '22333444000102', razao_social: 'Beta Soluções em TI S/A', contato: 'Rafael Alves', cidade: 'Goiânia', uf: 'GO', endereco: 'Av. T-63, 1450', email: 'comercial@betati.com.br', atividades: 'Infraestrutura, suporte e licenciamento', segmentos: ['Tecnologia da Informação'], telefones: [{ numero: '62992223344', whatsapp: 1 }, { numero: '6232119988', whatsapp: 0 }] },
+    { cnpj: '33444555000103', razao_social: 'Gamma Papelaria Corporativa ME', contato: 'Luciana Rocha', cidade: 'Anápolis', uf: 'GO', endereco: 'Rua 14, 210 - Centro', email: 'vendas@gammapapelaria.com.br', atividades: 'Materiais de expediente e escritório', segmentos: ['Materiais de Escritório'], telefones: [{ numero: '62993334455', whatsapp: 1 }] },
+    { cnpj: '44555666000104', razao_social: 'Delta Gráfica Express Ltda', contato: 'Paulo Nunes', cidade: 'Taguatinga', uf: 'DF', endereco: 'QNA 21 Lote 08', email: 'atendimento@deltagrafica.com.br', atividades: 'Impressão offset e digital sob demanda', segmentos: ['Serviços Gráficos'], telefones: [{ numero: '61994445566', whatsapp: 1 }, { numero: '6130314545', whatsapp: 0 }] },
+    { cnpj: '55666777000105', razao_social: 'Épsilon Engenharia e Obras Ltda', contato: 'Aline Torres', cidade: 'Luziânia', uf: 'GO', endereco: 'Av. Central, 580', email: 'licitacoes@epsilonengenharia.com.br', atividades: 'Reforma predial e manutenção civil', segmentos: ['Construção Civil'], telefones: [{ numero: '61995556677', whatsapp: 1 }] },
+    { cnpj: '66777888000106', razao_social: 'Zeta Higiene Profissional EPP', contato: 'Márcio Lima', cidade: 'Formosa', uf: 'GO', endereco: 'Rua Anhanguera, 99', email: 'contato@zetahigiene.com.br', atividades: 'Produtos de limpeza e sanitização', segmentos: ['Limpeza e Higienização'], telefones: [{ numero: '61996667788', whatsapp: 1 }, { numero: '6130445500', whatsapp: 0 }] },
+    { cnpj: '77888999000107', razao_social: 'Eta Log Transportes Ltda', contato: 'Juliana Prado', cidade: 'Brasília', uf: 'DF', endereco: 'SCIA Quadra 15 Conjunto 2', email: 'operacao@etalog.com.br', atividades: 'Frete rodoviário e logística integrada', segmentos: ['Logística e Transporte'], telefones: [{ numero: '61997778899', whatsapp: 1 }] },
+    { cnpj: '88999000000108', razao_social: 'Theta Comércio Integrado Ltda', contato: 'Renato Castro', cidade: 'Aparecida de Goiânia', uf: 'GO', endereco: 'Rua dos Ipês, 701', email: 'vendas@thetacomercio.com.br', atividades: 'Fornecimento misto para órgãos públicos', segmentos: ['Materiais de Escritório', 'Alimentação'], telefones: [{ numero: '62998889900', whatsapp: 1 }, { numero: '6232554400', whatsapp: 0 }] },
+    { cnpj: '99000111000109', razao_social: 'Iota Serviços Administrativos Ltda', contato: 'Fernanda Queiroz', cidade: 'Sobradinho', uf: 'DF', endereco: 'Quadra 3 Bloco C Sala 12', email: 'propostas@iotaservicos.com.br', atividades: 'Apoio administrativo e operacional', segmentos: ['Serviços Gráficos', 'Limpeza e Higienização'], telefones: [{ numero: '61990001110', whatsapp: 1 }] },
+    { cnpj: '10111222000110', razao_social: 'Kappa Suprimentos e Tecnologia ME', contato: 'Diego Martins', cidade: 'Valparaíso de Goiás', uf: 'GO', endereco: 'Av. Comercial, 1200', email: 'contato@kappasuprimentos.com.br', atividades: 'Suprimentos, periféricos e serviços de TI', segmentos: ['Tecnologia da Informação', 'Materiais de Escritório'], telefones: [{ numero: '61991122334', whatsapp: 1 }, { numero: '6130998877', whatsapp: 0 }] }
+  ];
+
+  for (const f of fornecedoresBase) {
+    const exists = await exec('SELECT id FROM fornecedores WHERE cnpj = ?', [f.cnpj]);
+    if (exists.rows.length) continue;
+
+    const insert = await exec(
+      `INSERT INTO fornecedores
+        (cnpj, razao_social, contato, cidade, uf, endereco, email, atividades)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      [f.cnpj, f.razao_social, f.contato, f.cidade, f.uf, f.endereco, f.email, f.atividades]
+    );
+
+    const fornecedorId = Number(insert.lastInsertRowid);
+    for (const t of f.telefones) {
+      await exec(
+        'INSERT INTO fornecedor_telefones (fornecedor_id, numero, whatsapp) VALUES (?, ?, ?)',
+        [fornecedorId, t.numero, t.whatsapp ? 1 : 0]
+      );
+    }
+
+    for (const segNome of f.segmentos) {
+      const segId = segMap.get(segNome);
+      if (!segId) continue;
+      await exec(
+        'INSERT OR IGNORE INTO fornecedor_segmentos (fornecedor_id, segmento_id) VALUES (?, ?)',
+        [fornecedorId, segId]
+      );
+    }
+  }
+}
+
 // ==========================================================================
 // 5. MIDDLEWARES & HELPERS
 // ==========================================================================
@@ -581,6 +642,8 @@ app.get('/api/segmentos', verificarToken, async (req, res) => {
 // CONSULTA DE FORNECEDORES
 app.get('/api/fornecedores', verificarToken, async (req, res) => {
   const { razao_social, cidade, uf, segmento } = req.query;
+  const page = Math.max(Number(req.query.page) || 1, 1);
+  const pageSize = Math.min(Math.max(Number(req.query.pageSize) || 10, 1), 50);
 
   let sql = `
     SELECT DISTINCT f.*
@@ -622,11 +685,14 @@ app.get('/api/fornecedores', verificarToken, async (req, res) => {
 
   sql += ' ORDER BY f.razao_social';
 
-  if (!temFiltro) {
-    sql += ' LIMIT 15';
-  }
+  const sqlCount = `SELECT COUNT(DISTINCT f.id) as total FROM fornecedores f ${sql.includes('JOIN fornecedor_segmentos') ? 'JOIN fornecedor_segmentos fs ON fs.fornecedor_id = f.id JOIN segmentos s ON s.id = fs.segmento_id' : ''} ${where.length ? `WHERE ${where.join(' AND ')}` : ''}`;
+
+  const offset = (page - 1) * pageSize;
+  sql += ' LIMIT ? OFFSET ?';
+  args.push(pageSize, offset);
 
   const r = await exec(sql, args);
+  const totalR = await exec(sqlCount, args.slice(0, args.length - 2));
 
   // carrega telefones e segmentos (apenas do que veio)
   for (const f of r.rows) {
@@ -646,12 +712,13 @@ app.get('/api/fornecedores', verificarToken, async (req, res) => {
     f.segmentos = segs.rows.map(s => s.nome);
   }
 
-  // total geral de fornecedores (rápido e leve)
-  const totalR = await exec('SELECT COUNT(*) as total FROM fornecedores');
   const total = totalR.rows[0].total;
   
   res.json({
+    page,
+    pageSize,
     total,
+    totalPages: Math.max(Math.ceil(total / pageSize), 1),
     dados: r.rows
   });
 });
@@ -1026,6 +1093,7 @@ app.get('/api/logs', verificarToken, async (req, res) => {
     await initDB();
     await seedAdmin();
     await seedSequencias2026();
+    await seedFornecedoresBase();
 
     const PORT = process.env.PORT || 3000;
     app.listen(PORT, () => console.log('AgN rodando na porta ' + PORT));
